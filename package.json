@@ -1,0 +1,16 @@
+{
+  "name": "TRI",
+  "repository": "michealparks/TRI",
+  "description": "",
+  "dependencies": {
+    "gulp": "*",
+    "gulp-babel": "*",
+    "gulp-concat": "*",
+    "gulp-add-src": "*",
+    "gulp-uglify": "*",
+    "gulp-stylus": "*",
+    "nib": "*",
+    "gulp-jade": "*",
+    "gulp-webserver": "*"
+  }
+}
