@@ -15,9 +15,21 @@ app
 
 */
 
-import 'user-input/model'
-import GameController from 'game-controller/model';
+import Input  from 'user-input/model';
+import Render from 'render/model';
+import Timer  from 'timer/model';
 
-GameController.startGame();
+function startLevel() {
+  Input.resume();
+  Render.resume();
+  Timer.start(8000, stopLevel);
+}
+
+function stopLevel() {
+  Input.pause();
+  Render.pause();
+}
+
+startLevel();
 
 

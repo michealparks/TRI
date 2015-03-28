@@ -1,90 +1,74 @@
 import GLOBAL   from 'global';
-import canvas   from 'canvas/model';
 import Triangle from 'triangle/model'
 
-/**
- *
- *
- *
- */
+const columns = 4;
+const rows = 7;
 
-const ctx = canvas.ctx;
+let tileSize  = Math.floor( GLOBAL.width / columns );
 
-export default class Grid {
-  constructor( columns, rows ) {
-    this.columns = columns || 4;
-    this.rows    = rows    || 7;
+if (tileSize % 2 === 1) tileSize -= 1;
 
-    this.tileSize  = Math.floor( GLOBAL.width / this.columns ) * GLOBAL.scaleFactor;
+let triangles = [];
 
-    this.triangles = [];
-    this.template  = null;
-    this.fillables = [];
-  }
-
-  /*
-
-  Copyright (c) 1970-2003, Wm. Randolph Franklin
-
-  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimers.
-  Redistributions in binary form must reproduce the above copyright notice in the documentation and/or other materials provided with the distribution.
-  The name of W. Randolph Franklin may not be used to endorse or promote products derived from this Software without specific prior written permission.
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-  
-  */
-  isInPolygon( nvert, vertx, verty, testx, testy ) {
-    let c = false;
-    for ( let i = 0, j = nvert-1; i < nvert; j = i++ ) {
-      if ( ( ( verty[i] > testy ) != ( verty[j] > testy ) ) &&
-        ( testx < ( vertx[j] - vertx[i] ) * ( testy - verty[i] ) / ( verty[j] - verty[i] ) + vertx[i] ) ) {
-            c = !c;
-      }
-    }
-    return c;
-  }
-
-  onPress( x, y ) {
-    for (let i = 0, fillable; fillable = this.fillables[i]; i++) {
-      if (this.isInPolygon( 3, fillable.x, fillable.y, x, y )) {
-        this.makeNewTriangle( this.fillables.splice( i, 1 ) );
-      }
-    }
-  }
-
-  addTriangle( template ) {
-    this.triangles.push( new Triangle( template.x, template.y, '#555' ) );
-  }
-
-  getLowestUnfilledTile( column ) {
-    for (let i = this.rows-1; i > -1; i--) {
-      let matches = this.getTrianglesInTile( column, i );
-      if (matches.length == 4) continue;
-      return { triangles: matches, row: i };
-    }
-  }
-
-  getTrianglesInTile( row, column ) {
-    const x1 = column * this.tileSize;
-    const x2 = x1 + this.tileSize
-    const y1 = (row * this.tileSize) + this.tileSize;
-    const y2 = y1 - this.tileSize;
-
-    return this.triangles.filter((triangle) => ( 
-      triangle.x[0] >= x1 && triangle.x[0] <= x2 &&
-      triangle.x[1] >= x1 && triangle.x[1] <= x2 &&
-      triangle.x[2] >= x1 && triangle.x[2] <= x2 &&
-      triangle.y[0] >= y1 && triangle.y[0] <= y2 &&
-      triangle.y[1] >= y1 && triangle.y[1] <= y2 &&
-      triangle.y[2] >= y1 && triangle.y[2] <= y2
-    ));
-  }
-
-  render() {
-    for (let i = 0, triangle; triangle = this.triangles[i]; i++) {
-      triangle.render( ctx );
-    }
-  }
-
+function addTriangle( triangle ) {
+  triangles.push( triangle );
 }
+
+function getTriangles() {
+  return triangles;
+}
+
+function getTrianglesInTile( column, row, lx, rx, ty, by ) {
+  let matches = [];
+
+  for (let i = 0, triangle; triangle = triangles[i]; i++) {
+
+    let match = 
+      triangle.x[0] >= lx && triangle.x[0] <= rx &&
+      triangle.x[1] >= lx && triangle.x[1] <= rx &&
+      triangle.x[2] >= lx && triangle.x[2] <= rx &&
+      triangle.y[0] >= ty && triangle.y[0] <= by &&
+      triangle.y[1] >= ty && triangle.y[1] <= by &&
+      triangle.y[2] >= ty && triangle.y[2] <= by;
+
+    if (match) matches.push(triangle);
+  }
+
+  return matches;
+}
+
+function getLowestUnfilledTile( column ) {
+  let row = rows;
+
+  while (row-- > 0) {
+    const lx = column * tileSize;
+    const rx = lx + tileSize
+    const ty = row * tileSize
+    const by = ty + tileSize;
+
+    let triangles = getTrianglesInTile( column, row, lx, rx, ty, by );
+
+    if (triangles.length == 4) continue;
+
+    const left = triangles.filter(t => t.y[2] == ty && t.x[2] == lx)[0];
+    const right = triangles.filter(t => t.y[1] == ty && t.x[1] == rx)[0];
+    const bottom = triangles.filter(t => t.y[1] == by && t.x[1] == lx)[0];
+
+    return { triangles, row, left, right, bottom };
+  }
+}
+
+function render( ctx, stamp ) {
+  let i = triangles.length;
+  while (i-- > 0) {
+    triangles[i].render( ctx );
+  }
+}
+
+export default {
+  tileSize,
+  addTriangle,
+  getLowestUnfilledTile,
+  getTrianglesInTile,
+  render
+};

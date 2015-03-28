@@ -18,8 +18,6 @@ var jade = require('gulp-jade');
 // Server
 var webserver = require('gulp-webserver');
 
-var dest;
-
 gulp.task('javascript', function () {
   gulp.src(['app/**/*.js'])
     .pipe(babel({modules: 'amd', moduleIds: true}))
@@ -27,7 +25,7 @@ gulp.task('javascript', function () {
         console.error(e.message);
         this.emit('end');
       })
-    .pipe(addsrc.prepend('lib/almond.js'))
+    .pipe(addsrc.prepend('lib/**/*.js'))
     .pipe(concat('app.js'))
     .pipe(gulp.dest('build'));
 });
