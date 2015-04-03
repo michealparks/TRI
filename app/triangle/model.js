@@ -15,28 +15,46 @@ x,y [0] |_______\ x,y [2]
 */
 
 import Color from 'color/model';
+import Easing from 'util/easing';
 
 export default class Triangle {
-  constructor( x = [0,0,0], y = [0,0,0], color) {
-    this.x = new Uint16Array(3);
-    this.y = new Uint16Array(3);
+  constructor( x = [0,0,0], y = [0,0,0], color = '#555', alpha = 1, col = null, row = null ) {
 
-    this.color = color || '#555';
+    // The first three indices store rendering coordinates.
+    // The last three store a cache of the position while animating.
+    this.x = new Int16Array(6);
+    this.y = new Int16Array(6);
+
+    this.col = col;
+    this.row = row;
+
+    this.color = color;
+    this.alpha = alpha;
     
-    const rgb  = Color.hexToRgb(this.color);
-    this.red   = rgb.r;
-    this.green = rgb.g;
-    this.blue  = rgb.b;
-    this.alpha = 1;
+    this.setColor( this.color );
+
+    this.neighbors = {
+      '0,1': null,
+      '0,2': null,
+      '1,2': null
+    };
 
     for (let i = 0; i < 3; i++) {
-      this.x[i] = x[i];
-      this.y[i] = y[i];
+      this.x[i] = this.x[i+3] = x[i];
+      this.y[i] = this.y[i+3] = y[i];
     }
   }
 
+  setColor( hex, alpha ) {
+    const rgb  = Color.hexToRgb( hex );
+    this.red   = rgb.r;
+    this.green = rgb.g;
+    this.blue  = rgb.b;
+    this.alpha = alpha || 1;
+  }
+
   render( ctx ) {
-    const color = `rgba(${this.red}, ${this.green}, ${this.blue}, ${this.alpha}`;
+    const color = `rgba( ${this.red}, ${this.green}, ${this.blue}, ${this.alpha} )`;
 
     ctx.fillStyle = color;
     ctx.strokeStyle = color;
@@ -49,42 +67,91 @@ export default class Triangle {
     ctx.stroke();
   }
 
-  fadeIn(ctx) {
-    this.alpha = 0;
+  fadeIn( end = 1 ) {
 
-    let frame = () => {
-      ctx.save();
-      ctx.globalAlpha = this.alpha;
-      this.render(ctx);
-      ctx.restore();
-      this.alpha += 0.025
-
-      if (this.alpha >= 1) this.alpha = 1;
-      else window.requestAnimationFrame(frame);
+    let increment = () => {
+      this.alpha += 0.02;
+      if (this.alpha >= end) { this.alpha = end; }
+      else window.setTimeout(increment, 1000/60);
     }
 
-    window.requestAnimationFrame(frame);
+    increment();
   }
 
-  fadeOut() {
-    let timeout = () => {
-      this.alpha -= 0.05;
-      if (this.alpha <= 0) this.alpha = 0;
-      else (window.setTimeout(timeout, 20));
+  fadeOut( end = 0 ) {
+
+    let increment = () => {
+      this.alpha -= 0.02;
+      if (this.alpha <= end) this.alpha = end;
+      else window.setTimeout(increment, 1000/60);
     }
 
-    window.setTimeout(timeout, 20);
+    increment();
+  }
+
+  grow() {
+
+    let start = Date.now();
+
+    let lowestIndex = 0;
+    let lowestX = 0;
+    let lowestY = 0;
+    let time = 300;
+    let xStep = [];
+    let yStep = [];
+
+    for (let i = 1; i < 3; i++) {
+      if (this.y[i] > this.y[lowestIndex]) lowestIndex = i;
+    }
+
+    lowestX = this.x[lowestIndex];
+    lowestY = this.y[lowestIndex];
+
+    for (let i = 0; i < 3; i++) {
+      this.x[i] = this.x[lowestIndex];
+      this.y[i] = this.y[lowestIndex];
+
+      xStep[i] = (this.x[i+3] - this.x[i]) / time;
+      yStep[i] = (this.y[i+3] - this.y[i]) / time;
+
+    }
+
+    let increment = () => {
+      const progress = Date.now() - start;
+      const coef = Easing.easeOutQuint( progress / time );
+
+      for (let i = 0; i < 3; i++) {
+        this.x[i] = lowestX + (xStep[i] * progress * coef);
+        this.y[i] = lowestY + (yStep[i] * progress * coef);
+
+        if (xStep[i] > 0 && this.x[i] > this.x[i+3]) this.x[i] = this.x[i+3];
+        if (xStep[i] < 0 && this.x[i] < this.x[i+3]) this.x[i] = this.x[i+3];
+        if (yStep[i] > 0 && this.y[i] > this.y[i+3]) this.y[i] = this.y[i+3];
+        if (yStep[i] < 0 && this.y[i] < this.y[i+3]) this.y[i] = this.y[i+3];
+      }
+
+      if (progress >= time) return;
+      else window.setTimeout(increment, 1000/60);
+    }
+
+    increment();
+
   }
 
   setPointsFromRightAngle( col, row, dx, dy, tileSize ) {
     const half = tileSize / 2;
 
-    this.x[0] = (col * tileSize) + half;
-    this.x[1] = this.x[0] + (half * (dx != 0? dx: -dy));
-    this.x[2] = this.x[0] + (half * (dx != 0? dx:  dy));
+    this.col = col;
+    this.row = row;
 
-    this.y[0] = (row * tileSize) + half;
-    this.y[1] = this.y[0] + (half * (dy != 0? dy: -dx));
-    this.y[2] = this.y[0] + (half * (dy != 0? dy:  dx));
+    this.x[0] = this.x[3] = (col * tileSize) + half;
+    this.x[1] = this.x[4] = this.x[0] + (half * (dx != 0? dx: -dy));
+    this.x[2] = this.x[5] = this.x[0] + (half * (dx != 0? dx:  dy));
+
+    this.y[0] = this.y[3] = (row * tileSize) + half;
+    this.y[1] = this.y[4] = this.y[0] + (half * (dy != 0? dy: -dx));
+    this.y[2] = this.y[5] = this.y[0] + (half * (dy != 0? dy:  dx));
   }
+
+
 }

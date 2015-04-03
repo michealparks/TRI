@@ -30,8 +30,8 @@ function pause() {
 }
 
 function mapLocation(e) {
-  const x = (e.touches[0]? e.touches[0].pageX: e.pageX) * scaleFactor;
-  const y = (e.touches[0]? e.touches[0].pageY: e.pageY) * scaleFactor;
+  const x = (e.touches? e.touches[0].pageX: e.pageX) * scaleFactor;
+  const y = (e.touches? e.touches[0].pageY: e.pageY) * scaleFactor;
 
   const column   = Math.floor( x / tileSize );
   const row      = Math.floor( y / tileSize );
@@ -46,7 +46,7 @@ function mapLocation(e) {
 
 function mapTilePosition( column, row, tileX, tileY, prox ) {
   const columnData = Grid.getLowestUnfilledTile( column );
-  const triangles  = columnData.triangles;
+  const triangles  = Grid.getTriangles();
 
   const bottom = columnData.bottom;
   const left   = columnData.left;
@@ -70,7 +70,7 @@ function mapTilePosition( column, row, tileX, tileY, prox ) {
   } else if (bottom && right && ! left) {
     dx = -1;
   // bottom
-  } else if (triangles.length == 0) {
+  } else if (! bottom) {
     dy = 1;
   // top
   } else {
@@ -83,19 +83,24 @@ function mapTilePosition( column, row, tileX, tileY, prox ) {
 function onPtrDown(e) {
   mapLocation(e);
 
-  Template.toggleVisibility(true);
+  Template.get().fadeIn(0.5);
 }
 
 function onPtrMove(e) {
-  if (ptrIsDown) mapLocation(e);
+  e.preventDefault();
+
+  if (ptrIsDown) { mapLocation(e); }
 }
 
 function onPtrUp() {
   const template = Template.get();
-  const triangle = new Triangle( template.x, template.y, Color.upcoming() );
+  const color = Color.upcoming();
+  const triangle = new Triangle( template.x, template.y, color, 1, template.col, template.row );
+
+  triangle.grow();
+  template.fadeOut();
 
   Grid.addTriangle( triangle );
-  Template.toggleVisibility(false);
   Color.randomize();
   Timer.addTime(2000)
   Timer.setColor(Color.upcoming());

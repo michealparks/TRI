@@ -16,8 +16,8 @@ let rAFid = null;
 function render(stamp) {
   ctx.clearRect( 0, 0, canvas.width, canvas.height );
 
-  Grid.render(ctx, stamp);
   Timer.render(ctx, stamp);
+  Grid.render(ctx, stamp);
   Template.render(ctx, stamp);
 
   rAFid = window.requestAnimationFrame(render)

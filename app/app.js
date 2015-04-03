@@ -22,7 +22,7 @@ import Timer  from 'timer/model';
 function startLevel() {
   Input.resume();
   Render.resume();
-  Timer.start(8000, stopLevel);
+  Timer.start(5000, stopLevel);
 }
 
 function stopLevel() {

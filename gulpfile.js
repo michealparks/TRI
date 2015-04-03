@@ -14,6 +14,7 @@ var nib    = require('nib');
 
 // HTML
 var jade = require('gulp-jade');
+var inline = require('gulp-inline');
 
 // Server
 var webserver = require('gulp-webserver');
@@ -61,9 +62,17 @@ gulp.task('webserver', function () {
     }));
 });
 
+gulp.task('inline', ['javascript', 'css'], function () {
+  gulp.src('index.html')
+    .pipe(inline({
+      base: './',
+      js: uglify({reserved: 'require'}),
+    }))
+    .pipe(gulp.dest('./'));
+});
 
 var mainTasks = ['javascript', 'css', 'jade'];
 
 gulp.task('watch', function () { gulp.watch(['./app/**'], [mainTasks]); });
-gulp.task('build', mainTasks.concat(['uglify', 'gh-pages']));
+gulp.task('build', mainTasks.concat(['inline']));
 gulp.task('default', mainTasks.concat(['webserver', 'watch']));

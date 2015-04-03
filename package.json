@@ -11,6 +11,7 @@
     "gulp-stylus": "*",
     "nib": "*",
     "gulp-jade": "*",
-    "gulp-webserver": "*"
+    "gulp-webserver": "*",
+    "gulp-inline": "*"
   }
 }
