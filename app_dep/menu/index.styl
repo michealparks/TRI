@@ -1,0 +1,39 @@
+@import 'nib'
+
+body.in-menu
+  
+  #menu
+    transition visibility 0 0 opacity, 1000ms
+    visibility visible
+    opacity 1
+    pointer-events auto
+    
+body:not(.in-menu)
+  #background-canvas
+    transition opacity 1000ms
+    opacity 0
+
+#menu
+  absolute top left
+  size 100% 100%
+  
+  transition visibility 0 1000ms, opacity 1000ms
+  visiblity hidden
+  opacity 0
+  pointer-events none
+  
+  *
+    relative top 35% left
+    color #555
+    
+    transition text-shadow 100ms
+    
+  #title
+    margin 10px 20px
+    font-size 70px
+    text-shadow 0 3px 0 #888
+    
+  [id^='btn-']
+    margin 0 20px
+    padding 10px 0
+    font-size 24px

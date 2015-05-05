@@ -1,0 +1,52 @@
+@import 'nib'
+
+#chapters
+  absolute top left
+  size 100% 100%
+  font-family Avenir
+  font-weight 100
+  overflow auto
+  
+  .chapter
+    box-sizing border-box
+    size 100% 600px
+    padding 100px 0
+    border-bottom 1px solid #eee
+    
+    &:last-child
+      size inherit
+  
+  .title
+    fixed top right
+    padding 20px
+    font-size 50px
+    
+    opacity 0
+    transition opacity 300ms
+    
+  .level
+    padding 5px 50px
+    margin 10px 0
+    font-size 30px
+    background-color alpha( #aaa, 0.2 )
+    
+
+#chapters
+  
+  &[data-section='square']   .title#square
+  &[data-section='triangle'] .title#triangle
+  &[data-section='diamond']  .title#diamond
+  &[data-section='shade']    .title#shade
+    opacity 1
+    
+.chapter#square
+  background-color alpha( #555, 0.1 )
+  
+.chapter#triangle
+  background-color alpha( #ddd, 0.1 )
+  
+.chapter#diamond
+  background-color alpha( #555, 0.1 )
+  
+.chapter#shade
+  background-color alpha( #ddd, 0.1 )

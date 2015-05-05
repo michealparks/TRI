@@ -13,5 +13,8 @@
     "gulp-jade": "*",
     "gulp-webserver": "*",
     "gulp-inline": "*"
+  },
+  "devDependencies": {
+    "gulp-if": "^1.2.5"
   }
 }

@@ -1,78 +1,79 @@
+( function() {
 'use strict';
 
-var gulp = require('gulp');
+const gulp   = require( 'gulp' );
+const gulpif = require( 'gulp-if' );
 
 // Javascript
-var babel   = require('gulp-babel');
-var concat  = require('gulp-concat');
-var addsrc  = require('gulp-add-src');
-var uglify  = require('gulp-uglify');
+const babel  = require( 'gulp-babel' );
+const concat = require( 'gulp-concat' );
+const addsrc = require( 'gulp-add-src' );
+const uglify = require( 'gulp-uglify' );
 
 // CSS
-var stylus = require('gulp-stylus');
-var nib    = require('nib');
+const stylus = require( 'gulp-stylus' );
+const nib    = require( 'nib' );
 
 // HTML
-var jade = require('gulp-jade');
-var inline = require('gulp-inline');
+const jade   = require( 'gulp-jade' );
+const inline = require( 'gulp-inline' );
 
 // Server
-var webserver = require('gulp-webserver');
+const webserver = require( 'gulp-webserver' );
 
-gulp.task('javascript', function () {
-  gulp.src(['app/**/*.js'])
-    .pipe(babel({modules: 'amd', moduleIds: true}))
-      .on('error', function (e) {
-        console.error(e.message);
-        this.emit('end');
-      })
-    .pipe(addsrc.prepend('lib/**/*.js'))
-    .pipe(concat('app.js'))
-    .pipe(gulp.dest('build'));
-});
+const buildDest = gulp.dest( 'build' );
 
-gulp.task('css', function () {
-  gulp.src(['app/**/!(variables|mixins)*.styl'])
-    .pipe(addsrc.prepend('app/styl/*(mixins|variables).styl'))
-    .pipe(concat('app.styl'))
-    .pipe(stylus({use: nib(), compress: true}))
-    .pipe(gulp.dest('build'));
-});
+const production = false;
 
-gulp.task('jade', function () {
-  gulp.src(['app/**/*.jade'])
-    .pipe(jade({}))
-    .pipe(gulp.dest('./'));
-});
+gulp.task( 'javascript', function () {
+  gulp.src( [ 'app/**/*.js' ] )
+    .pipe( babel( { modules: 'amd', moduleIds: true } ) )
+    .on( 'error', function ( e ) {
+      console.error( e.message );
+      this.emit( 'end' );
+    } )
+    .pipe( addsrc.prepend( 'bower/**/*.js' ) )
+    .pipe( addsrc.prepend( 'lib/**/*.js' ) )
+    .pipe( concat( 'app.js' ) )
+    .pipe( gulpif( production, uglify( { reserved: 'require' } ) ) )
+    .pipe( gulp.dest( 'build' ) );
+} );
 
-gulp.task('uglify', function () {
-  gulp.src(['build/app.js'])
-    .pipe(uglify())
-    .pipe(gulp.dest('build'));
-});
+gulp.task( 'css', function () {
+  gulp.src( [ 'app/**/!(variables|mixins)*.styl' ] )
+    .pipe( addsrc.prepend( 'app/styl/*(mixins|variables).styl' ) )
+    .pipe( concat( 'app.styl' ) )
+    .pipe( stylus( { use: nib(), compress: true } ) )
+    .pipe( gulp.dest( 'build' ) );
+} );
 
-gulp.task('webserver', function () {
-  gulp.src('./')
-    .pipe(webserver({
+gulp.task( 'html', ['javascript', 'css'], function () {
+  gulp.src( [ 'app/**/*.jade' ] )
+    .pipe( jade( { } ) )
+    .pipe( gulpif( production, inline( { base: 'build' } ) ) )
+    .pipe( gulp.dest( 'build' ) );
+} );
+
+gulp.task( 'webserver', function () {
+  gulp.src( 'build' )
+    .pipe( webserver( {
       livereload: true,
       host: '0.0.0.0',
       directoryListing: false,
       open: true,
       fallback: 'index.html'
-    }));
-});
+    } ) );
+} );
 
-gulp.task('inline', ['javascript', 'css'], function () {
-  gulp.src('index.html')
-    .pipe(inline({
-      base: './',
-      js: uglify({reserved: 'require'}),
-    }))
-    .pipe(gulp.dest('./'));
-});
+const mainTasks = ['javascript', 'css', 'html'];
 
-var mainTasks = ['javascript', 'css', 'jade'];
+gulp.task( 'watch', function () { 
+  gulp.watch( [ './app/**' ], [ mainTasks ] ); 
+} );
+gulp.task( 'build', mainTasks.concat( [ 'inline' ] ) );
+gulp.task( 'default', mainTasks.concat( [ 'webserver', 'watch' ] ) );
 
-gulp.task('watch', function () { gulp.watch(['./app/**'], [mainTasks]); });
-gulp.task('build', mainTasks.concat(['inline']));
-gulp.task('default', mainTasks.concat(['webserver', 'watch']));
+} () );
+
+
+
